@@ -31,8 +31,8 @@ os.makedirs(os.path.dirname(net.topoFile), exist_ok=True)
 # The topology file will be created on network startup, before the controller is executed
 controller_out_file = './work/log/controller.log'
 net.execScript(f'python3 -m controller --topology-path {net.topoFile}'
-               f' --queue-rate-pps 2000'  # 2000 pps * 1500 bytes/packet = 3.0 Mbps
-               f' --queue-depth-packets 120'  # 1000 ms / 2000 pps * 120 packets = 60.0 ms
+               f' --queue-rate-pps 500'  # 500 pps * 1500 bytes/packet = 6.0 Mbps
+               f' --queue-depth-packets 15'  # 1000 ms / 500 pps * 30 packets = 60.0 ms
                f' --vq-committed-alpha 0.2'
                f' --vq-peak-alpha 0.3',
                out_file=controller_out_file)
