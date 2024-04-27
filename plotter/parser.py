@@ -1,4 +1,7 @@
+import base64
+import hashlib
 import os.path
+import pathlib
 import re
 from typing import Optional, List
 
@@ -9,7 +12,9 @@ import pandas as pd
 class SwitchLogParser:
     @staticmethod
     def parse_caching(path: str) -> pd.DataFrame:
-        parsed_path = path + '.parsed'
+        sha1 = hashlib.sha1(pathlib.Path(path).read_bytes()).digest()
+        b64 = base64.b64encode(sha1).decode().replace('/', '-')
+        parsed_path = path + '.parsed.' + b64
         if os.path.exists(parsed_path):
             with open(parsed_path, 'r') as f:
                 print('Loading cached switch log file...')
