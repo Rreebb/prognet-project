@@ -30,13 +30,14 @@ class SwitchLogParser:
 
     @staticmethod
     def parse(path: str) -> pd.DataFrame:
-        columns = ['timestamp', 'egress_port', 'flow_id', 'vq_id', 'dequeue_timedelta']
+        columns = ['timestamp', 'egress_port', 'flow_id', 'vq_id', 'dequeue_timedelta', 'packet_length']
+        colsize = len(columns)
         data = pd.DataFrame(np.empty((0, len(columns)), dtype=np.int64), columns=columns)
         with open(path, 'r') as f:
             for line in f:
                 row = SwitchLogParser._parse_line(line)
                 if row is not None:
-                    data_row = pd.DataFrame(np.array(row, dtype=np.int64).reshape((1, 5)), columns=data.columns)
+                    data_row = pd.DataFrame(np.array(row, dtype=np.int64).reshape((1, colsize)), columns=data.columns)
                     data = pd.concat([data, data_row], ignore_index=True)
         return data
 
@@ -44,5 +45,5 @@ class SwitchLogParser:
     def _parse_line(line: str) -> Optional[List[int]]:
         line = line.rstrip()
         match = re.fullmatch(r'\[[^]]+] \[bmv2] \[I] \[[^]]+] Egress data: timestamp=(\d+); egress_port=(\d+); '
-                             r'flow_id=(\d+); vq_id=(\d+); dequeue_timedelta=(\d+)', line)
+                             r'flow_id=(\d+); vq_id=(\d+); dequeue_timedelta=(\d+); packet_length=(\d+)', line)
         return list(map(int, match.groups())) if match else None

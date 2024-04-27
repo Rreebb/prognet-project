@@ -95,9 +95,9 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
 control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
     apply {
-        log_msg("Egress data: timestamp={}; egress_port={}; flow_id={}; vq_id={}; dequeue_timedelta={}",
+        log_msg("Egress data: timestamp={}; egress_port={}; flow_id={}; vq_id={}; dequeue_timedelta={}; packet_length={}",
                 {standard_metadata.egress_global_timestamp, standard_metadata.egress_port,
-                meta.flow_id, meta.vq_id, standard_metadata.deq_timedelta});
+                meta.flow_id, meta.vq_id, standard_metadata.deq_timedelta, standard_metadata.packet_length});
     }
 }
 
