@@ -2,6 +2,9 @@ clean:
 	rm -rf work
 	mn -c
 
+cli:
+	python3 network.py --cli
+
 run:
 	python3 network.py
 
@@ -10,4 +13,4 @@ plot:
 
 eval: run plot
 
-.PHONY: clean run plot
+.PHONY: clean cli run plot
