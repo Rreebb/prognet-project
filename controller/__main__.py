@@ -1,6 +1,7 @@
 import json
 import logging
 import sys
+import time
 from argparse import ArgumentParser, FileType
 
 import networkx
@@ -35,6 +36,10 @@ def main() -> None:
     )
     controller = Controller(topology, config)
     controller.initialize_switches()
+
+    logging.getLogger(__name__).info('Controller has finished; waiting until interrupted...')
+    while True:
+        time.sleep(999)
 
 
 if __name__ == '__main__':

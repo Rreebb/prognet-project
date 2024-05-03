@@ -40,8 +40,8 @@ os.makedirs(os.path.dirname(net.topoFile), exist_ok=True)
 # The topology file will be created on network startup, before the controller is executed
 controller_out_file = './work/log/controller.log'
 net.execScript(f'python3 -m controller --topology-path {net.topoFile}'
-               f' --queue-rate-pps 500'  # 500 pps * 1500 bytes/packet = 6.0 Mbps  # TODO doesn't seem to work, confirm 1500 bytes/packet
-               f' --queue-depth-packets 15'  # 1000 ms / 500 pps * 30 packets = 60.0 ms
+               f' --queue-rate-pps 500'  # 500 pps * 1500 bytes/packet = 6.0 Mbps
+               f' --queue-depth-packets 30'  # 1000 ms / 500 pps * 30 packets = 60.0 ms
                f' --vq-committed-alpha 0.2'
                f' --vq-peak-alpha 0.3',
                out_file=controller_out_file)
@@ -77,7 +77,7 @@ def get_host_ip(host: str) -> str:
 
 def add_task_iperf_server(host_from: str, host_to: str, time_from: float, time_to: float) -> None:
     for port_offset, (rate, count) in enumerate(flows_rate_count):
-        iperf = f'iperf3 -s --port {port_min + port_offset}'
+        iperf = f'iperf3 --server --port {port_min + port_offset}'
         cmd = f'bash -c "{iperf} > ./work/log/iperf-s_{host_from}-{host_to}_{rate}x{count}.log 2>&1"'
         net.addTask(host_to, cmd, time_from, time_to - time_from)
 
@@ -87,7 +87,8 @@ def add_task_iperf_client(host_from: str, host_to: str, time_from: float, time_t
     ip = get_host_ip(host_to)
     for port_offset, (rate, count) in enumerate(flows_rate_count):
         port = port_min + port_offset
-        iperf = f'iperf3 -c {ip} --port {port} --bitrate {rate} --fq-rate {rate} --parallel {count} --time {duration}'
+        iperf = (f'iperf3 --client {ip} --port {port} --bitrate {rate} --fq-rate {rate} --parallel {count}'
+                 f' --time {duration} --version4 --set-mss 1460')
         log = f'./work/log/iperf-c_{host_from}-{host_to}_{time_from}s-{time_to}s_{rate}x{count}.log'
         cmd = f'bash -c "{iperf} > {log} 2>&1"'
         net.addTask(host_from, cmd, time_from, duration)
