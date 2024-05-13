@@ -1,28 +1,30 @@
-from collections import Counter
 from enum import Enum
-from typing import Dict
 
+import numpy as np
 import pandas as pd
 
 
-class FlowSize(Enum):
+class FlowType(Enum):
     SMALL = 1
     LARGE = 2
 
 
-def classify_data(data: pd.DataFrame, flow_size_threshold: int, debug: bool = False) -> Dict[int, FlowSize]:
+def classify_data(data: pd.DataFrame, flow_size_threshold: int, debug: bool = False) -> pd.DataFrame:
     data_group_sum = data[["flow_id", "packet_length"]].groupby(
         "flow_id").sum().rename(columns={"packet_length": "sum(packet_length)"})
-    ret = dict()
+
+    data_group_sum["sum(packet_length)"] = np.where(data_group_sum["sum(packet_length)"] <= flow_size_threshold,
+                                                    FlowType.SMALL.value, FlowType.LARGE.value)
 
     if debug:
+        print("Value of data group sum:")
         print(data_group_sum)
-        
-    for flowId, row in data_group_sum.iterrows():
-        ret[flowId] = FlowSize.LARGE if row["sum(packet_length)"] > flow_size_threshold else FlowSize.SMALL
 
-    for flow_size in FlowSize:
-        print(f"Number of {flow_size.name.lower()} flows:",
-              Counter(ret.values())[flow_size])
+    flow_to_type = data_group_sum.rename(columns={"sum(packet_length)": "flow_type"})
+    data = data.join(flow_to_type, on='flow_id')
 
-    return ret
+    for flow_type in FlowType:
+        print(
+            f"Number of {flow_type.name.lower()} flows: {(flow_to_type.flow_type == flow_type.value).sum()}")
+
+    return data
