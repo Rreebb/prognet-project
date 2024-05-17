@@ -44,12 +44,11 @@ class Controller:
             self._logger.debug("Virtual queue not found in switch, skipping...")
             return
 
-        max_rate, max_depth = self._config.virtual_queue_rate_pps, self._config.virtual_queue_depth_packets
+        max_rate, max_depth = self._config.switch_queue_rate_pps, self._config.switch_queue_depth_packets
         alpha_c, alpha_p = self._config.virtual_queue_committed_alpha, self._config.virtual_queue_peak_alpha
         # TODO it might be a good idea to increase the peak burst size
         cir, cburst, pir, pburst = max_rate * alpha_c, max_depth * alpha_c, max_rate * alpha_p, max_depth * alpha_p
-        controller.meter_array_set_rates(meter_name, self._config.virtual_queue_rate_pps,
-                                         [(cir, cburst), (pir, pburst)])
+        controller.meter_array_set_rates(meter_name, [(cir, cburst), (pir, pburst)])
 
     def _fill_l3_tables(self, sw: str) -> None:
         """Fill in the next hop from the switch towards each host. This could be improved by longest prefix matching."""
