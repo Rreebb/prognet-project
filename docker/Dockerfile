@@ -27,6 +27,9 @@ RUN apt-get update \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && curl https://raw.githubusercontent.com/mininet/mininet/master/mininet/log.py > /usr/local/lib/python3.8/dist-packages/mininet/log.py
 
+# Enable DCTCP
+RU echo "net.ipv4.tcp_congestion_control=dctcp" >> /etc/sysctl.conf && sysctl -p
+
 WORKDIR /workspace/mnt
 
 CMD ["/bin/bash"]
