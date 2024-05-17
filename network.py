@@ -50,7 +50,8 @@ os.makedirs(os.path.dirname(controller_out_file), exist_ok=True)
 # Logging, capturing configuration
 net.setLogLevel('info')
 net.enableLogAll(log_dir='./work/log')
-net.enablePcapDumpAll(pcap_dir='./work/pcap')
+# net.enablePcapDumpAll(pcap_dir='./work/pcap')
+net.disablePcapDumpAll()
 
 # Start Mininet interactively
 if args.cli:
