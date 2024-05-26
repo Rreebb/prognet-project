@@ -24,7 +24,7 @@ class SwitchLogParser:
         else:
             print('Parsing switch log file...')
             data = SwitchLogParser.parse(path)
-            data.to_csv(parsed_path)
+            data.to_csv(parsed_path, index=False)
             print('Switch log file parsed and cached')
             return data
 
