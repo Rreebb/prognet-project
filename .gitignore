@@ -4,6 +4,7 @@
 # IDE files
 /.idea
 /.vscode
+/.history
 
 # Caches
 __pycache__

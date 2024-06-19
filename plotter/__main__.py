@@ -4,13 +4,13 @@ from argparse import ArgumentParser, FileType
 import pandas as pd
 from plotter.classifier import classify_data, classify_data
 from plotter.parser import SwitchLogParser
-from plotter.plotter import plot_flow_type_vs_sum_packet_length_boxplot
+from plotter.plotter import plot_flow_type_vs_queue_delay_cdf, plot_flow_type_vs_sum_packet_length_boxplot
 from matplotlib import pyplot as plt
 
-IS_DEBUG = True
-
 def generate_plots(data: pd.DataFrame, plot_dir: str) -> None:
-    plot_flow_type_vs_sum_packet_length_boxplot(data, plot_dir, IS_DEBUG)
+    plot_flow_type_vs_sum_packet_length_boxplot(data, plot_dir)
+    plot_flow_type_vs_queue_delay_cdf(data, plot_dir)
+    plt.show()
 
 
 def load_data(switch_log_path: str) -> pd.DataFrame:
@@ -36,7 +36,7 @@ def main() -> None:
     if not os.path.exists(args.plot_dir):
         os.makedirs(args.plot_dir)
 
-    data = classify_data(data, 12345, IS_DEBUG)  # TODO set the constant
+    data = classify_data(data, 12345)  # TODO set the constant
     print(f'First few classified log entries: (time unit: microseconds)')
     print(data.head())
 
