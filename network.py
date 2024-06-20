@@ -1,20 +1,19 @@
 import os
 import time
 from argparse import ArgumentParser
-from builtins import str
 from typing import Literal, List, Tuple, Dict
 
 from p4utils.mininetlib.network_API import NetworkAPI
 from p4utils.utils.compiler import P4C
 
 parser = ArgumentParser()
-parser.add_argument("--variant", choices=['base', 'pfvq'], default='pfvq',
+parser.add_argument("--variant", choices=['no-vq', 'per-port-vq', 'per-flow-vq'], default='per-port-vq',
                     help="Which P4 source code variant to use")
 parser.add_argument("--cli", action="store_true",
                     help="Start the Mininet CLI after setting up the network")
 args = parser.parse_args()
 
-switch_variant: Literal['base', 'pfvq'] = args.variant
+switch_variant: Literal['no-vq', 'per-port-vq', 'per-flow-vq'] = args.variant
 
 net = NetworkAPI()
 
@@ -31,8 +30,9 @@ net.l3()
 # Switch configuration
 compiler_dir = f'./work/switch_{switch_variant}'
 os.makedirs(compiler_dir, exist_ok=True)
-net.setCompiler(P4C, outdir=compiler_dir)
-net.setP4SourceAll(f'./switch/switch_{switch_variant}.p4')
+net.setCompiler(P4C, outdir=compiler_dir, opts=f'--target bmv2 --arch v1model --std p4-16'
+                                               f' -D VARIANT_{switch_variant.upper().replace("-", "_")}=1')
+net.setP4SourceAll(f'./switch/switch.p4')
 
 # Initialize the switches via the controller
 net.setTopologyFile(f'./work/topology.json')

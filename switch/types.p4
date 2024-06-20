@@ -1,6 +1,3 @@
-#include <core.p4>
-#include <v1model.p4>
-
 //v1model
 typedef bit<9> portId_t;
 typedef bit<32> clone_session_t;
@@ -12,6 +9,21 @@ const meter_color_t METER_GREEN = 0;
 const meter_color_t METER_YELLOW = 1;
 const meter_color_t METER_RED = 2;
 const meter_color_t METER_INVALID = 3;
+
+//We reserve resources for each VQ so we need to limit the number of VQs. A VQ ID consists of a port and a flow id,
+//  therefore by storing the port IDs in a smaller type we don't need to reserve as much space for VQs.
+#define SMALL_PORT_T_WIDTH 4
+typedef bit<SMALL_PORT_T_WIDTH> small_port_t;
+//Limits how many flows we can differentiate, also affects how large the VQ ID is
+#define FLOW_ID_T_WIDTH 12
+typedef bit<FLOW_ID_T_WIDTH> flow_id_t;
+#define VQ_ID_T_WIDTH (SMALL_PORT_T_WIDTH + FLOW_ID_T_WIDTH)
+typedef bit<VQ_ID_T_WIDTH> vq_id_t;
+
+struct metadata {
+    flow_id_t flow_id;
+    vq_id_t vq_id;
+}
 
 //Ethernet
 typedef bit<16> etherType_t;
