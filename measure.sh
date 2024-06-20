@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 set -e -u -o pipefail
 
-rm -rf work/measure/
+rm -rf work/measure
+rm -rf work/log
+mkdir -p work/measure
 
 run(){
     local name=$1
     local network_params=$2
-    echo "Running $name"
+    echo "Running $name..."
+
+    mkdir -p work/log
     # shellcheck disable=SC2086
-    python network.py $network_params >work/log/network.log 2>&1
-    mv -v work/log work/measure/"$name"
+    python network.py $network_params >>work/log/network.log 2>&1
+    mv work/log work/measure/"$name"
 }
 
 run "no-vq"       "--variant no-vq"
