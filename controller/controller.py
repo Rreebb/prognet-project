@@ -21,7 +21,7 @@ class Controller:
     def initialize_switches(self) -> None:
         self._logger.info("Initializing switches...")
         for sw, controller in self._controllers.items():
-            self._logger.debug(f"Initializing switch {sw}...")
+            self._logger.info(f"Initializing switch {sw}...")
             controller.reset_state()
             self._set_switch_queue_limits(sw)
             self._set_virtual_queue_limits(sw)
@@ -35,13 +35,13 @@ class Controller:
 
     def _set_virtual_queue_limits(self, sw: str) -> None:
         controller = self._controllers[sw]
-        meter_name = "vq_packets"
+        meter_name = "MyIngress.vq_packets"
 
         # Virtual queues might not exist, it depends on which P4 program is running
         if meter_name in controller.get_meter_arrays():
-            self._logger.debug("Virtual queue found in switch, configuring...")
+            self._logger.info("Virtual queue found in switch, configuring...")
         else:
-            self._logger.debug("Virtual queue not found in switch, skipping...")
+            self._logger.info("Virtual queue not found in switch, skipping...")
             return
 
         max_rate, max_depth = self._config.switch_queue_rate_pps, self._config.switch_queue_depth_packets
