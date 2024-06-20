@@ -4,8 +4,9 @@ WORKDIR /workspace
 
 # Install Mininet, Python and related tools
 RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y curl dnsutils ifupdown iproute2 iptables iputils-ping mininet \
-       net-tools tcpdump iperf3 xterm x11-xserver-utils python3 python3-pip graphviz libnanomsg-dev python3-tk \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y dnsutils ifupdown iproute2 iptables iputils-ping tcpdump \
+       net-tools curl iperf3 xterm x11-xserver-utils graphviz libnanomsg-dev mininet \
+       python3 python-is-python3 python3-pip python3-tk \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && pip3 install --no-cache-dir graphviz matplotlib networkx mininet psutil ipaddr scapy nnpy pandas
 
@@ -28,7 +29,7 @@ RUN apt-get update \
     && curl https://raw.githubusercontent.com/mininet/mininet/master/mininet/log.py > /usr/local/lib/python3.8/dist-packages/mininet/log.py
 
 # Enable DCTCP
-RU echo "net.ipv4.tcp_congestion_control=dctcp" >> /etc/sysctl.conf && sysctl -p
+RUN echo "net.ipv4.tcp_congestion_control=dctcp" >> /etc/sysctl.conf && sysctl -p
 
 WORKDIR /workspace/mnt
 
