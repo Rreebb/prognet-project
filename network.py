@@ -7,10 +7,12 @@ from p4utils.mininetlib.network_API import NetworkAPI
 from p4utils.utils.compiler import P4C
 
 parser = ArgumentParser()
-parser.add_argument("--variant", choices=['no-vq', 'per-port-vq', 'per-flow-vq'], default='per-port-vq',
+parser.add_argument("--variant", choices=['no-vq', 'per-port-vq', 'per-flow-vq'], default='per-flow-vq',
                     help="Which P4 source code variant to use")
 parser.add_argument("--cli", action="store_true",
                     help="Start the Mininet CLI after setting up the network")
+parser.add_argument("--vq-committed-alpha", type=float, default=0.2, help="The virtual queues' committed rate to use as a fraction of the switch's maximum rate (only used for pfvq variant)")
+parser.add_argument("--vq-peak-alpha", type=float, default=0.3, help="The virtual queues' peak rate to use as a fraction of the switch's maximum rate (only used for pfvq variant)")
 args = parser.parse_args()
 
 switch_variant: Literal['no-vq', 'per-port-vq', 'per-flow-vq'] = args.variant
@@ -42,8 +44,8 @@ controller_out_file = './work/log/controller.log'
 net.execScript(f'python3 -m controller --topology-path {net.topoFile}'
                f' --queue-rate-pps 500'  # 500 pps * 1500 bytes/packet = 6.0 Mbps
                f' --queue-depth-packets 30'  # 1000 ms / 500 pps * 30 packets = 60.0 ms
-               f' --vq-committed-alpha 0.2'
-               f' --vq-peak-alpha 0.3',
+               f' --vq-committed-alpha {args.vq_committed_alpha}'
+               f' --vq-peak-alpha {args.vq_peak_alpha}',
                out_file=controller_out_file)
 os.makedirs(os.path.dirname(controller_out_file), exist_ok=True)
 

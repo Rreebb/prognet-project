@@ -5,12 +5,12 @@ clean:
 cli:
 	python network.py --cli
 
-run:
-	python network.py
+measure:
+	./measure.sh
 
 plot:
 	python -m plotter --switch-log-path work/log/p4s.s1.log --plot-dir work/plot
 
-eval: run plot
+eval: measure plot
 
-.PHONY: clean cli run plot
+.PHONY: clean cli measure plot
