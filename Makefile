@@ -9,7 +9,7 @@ measure:
 	./measure.sh
 
 plot:
-	python -m plotter --switch-log-path work/log/p4s.s1.log --plot-dir work/plot
+	python -m plotter --measure-dir work/measure --plot-dir work/plot --open-plots
 
 eval: measure plot
 
