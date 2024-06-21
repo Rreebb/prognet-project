@@ -32,7 +32,9 @@ def plot_flow_type_vs_sum_packet_length_boxplot(name_to_data: Dict[str, pd.DataF
             values /= 1_000  # Convert bytes to kilobytes
             x.append(values)
         ax.boxplot(x, labels=labels)
+        ax.tick_params(axis='x', labelrotation=45)
 
+    fig.tight_layout()
     fig.savefig(f"{plot_dir}/sum_packet_length_boxplot.pdf")
 
 
@@ -67,6 +69,6 @@ def plot_flow_type_vs_queue_delay_cdf(name_to_data: Dict[str, pd.DataFrame], plo
             # Steps-post ensures that the jumps occur at the right place
             ax.plot(x, y, drawstyle='steps-post', label=name)
 
-    fig.legend(loc='lower right')
+    fig.legend(loc='lower right')  # TODO move the legend and remove duplicate entries
     fig.tight_layout()
     fig.savefig(f"{plot_dir}/queue_delay_cdf.pdf")

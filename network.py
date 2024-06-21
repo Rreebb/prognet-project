@@ -115,6 +115,4 @@ print("Waiting for the the simulation to finish...")
 time.sleep(task_from_to_sec['server'][1] + 3)  # Few seconds grace period
 net.stopNetwork()
 
-# TODO drop the first N seconds of traffic during evaluation
-
 # TODO check results with DCTCP disabled: does it really make a difference?
