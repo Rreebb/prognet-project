@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict
 
 import pandas as pd
-from plotter.classifier import classify_data, FlowType
+from plotter.classifier import FlowType, classify_ingress_port
 from plotter.parser import SwitchLogParser
 from plotter.plotter import plot_flow_type_vs_queue_delay_cdf, plot_flow_type_vs_sum_packet_length_boxplot
 from matplotlib import pyplot as plt
@@ -17,7 +17,14 @@ def generate_plots(name_to_data: Dict[str, pd.DataFrame], plot_dir: Path) -> Non
 
 def load_data(switch_log_path: Path) -> pd.DataFrame:
     data: pd.DataFrame = SwitchLogParser.parse_caching(switch_log_path)
-    print(f'Count of log entries: {data.shape[0]}')
+
+    # Drop the backward packets (e.g. TCP ACKs)
+    data = data[data.egress_port >= 3]  # TODO fix magic constant
+
+    # TODO maybe (log and) drop the iperf "meta" packets: I think we have +4 small and +4 large flows
+    #  (one for each iperf connection)
+    #  I don't think we can filter them based on port: sport is random, dport is the same for flows (probably)
+    #  Maybe filter based on packet count? and drop the 4 smallest flows?
 
     # Consider the timestamp of the first log entry as the epoch time
     start_time = data.at[0, 'timestamp']
@@ -57,10 +64,17 @@ def main() -> None:
     name_to_data: Dict[str, pd.DataFrame] = dict()
     for name in names:
         print(f"Loading measurement: {name}")
-        data = load_data(args_measure_dir / name / 'p4s.s1.log')
-        data = classify_data(data, 12345)  # TODO set the constant
+        data: pd.DataFrame = load_data(args_measure_dir / name / 'p4s.s1.log')
+        print(f'  Count of log entries: {data.shape[0]}')
+
+        data = classify_ingress_port(data)
+        data_flows = data[['flow_id', 'flow_type']].drop_duplicates()  # Flow to flow_type mapping
+        for flow_type in FlowType:
+            # noinspection PyUnresolvedReferences
+            print(f"  Number of {flow_type.name.lower()} flows: {(data_flows.flow_type == flow_type.value).sum()}")
+
         name_to_data[name] = data
-        print(f'First few classified log entries:')
+        print(f'  First few classified log entries:')
         print(data.head())
         print()
 

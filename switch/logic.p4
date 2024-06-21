@@ -59,19 +59,13 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             return;
         }
 
-        #ifdef VARIANT_PER_FLOW_VQ
-            hash(meta.flow_id, HashAlgorithm.crc32, (bit<1>) 0, {
-                hdr.ipv4.srcAddr,
-                hdr.ipv4.dstAddr,
-                hdr.ipv4.protocol,
-                hdr.tcp.isValid() ? hdr.tcp.srcPort : (hdr.udp.isValid() ? hdr.udp.srcPort : 0),
-                hdr.tcp.isValid() ? hdr.tcp.dstPort : (hdr.udp.isValid() ? hdr.udp.dstPort : 0)
-            }, (bit<32>) (1 << FLOW_ID_T_WIDTH));
-        #else
-            //We implement per-port VQs by treating all flows as the same flow (flow_id=0)
-            //In the no-VQ variant, the flow ID should be set to a dummy value (0)
-            meta.flow_id = 0;
-        #endif
+        hash(meta.flow_id, HashAlgorithm.crc32, (bit<1>) 0, {
+            hdr.ipv4.srcAddr,
+            hdr.ipv4.dstAddr,
+            hdr.ipv4.protocol,
+            hdr.tcp.isValid() ? hdr.tcp.srcPort : (hdr.udp.isValid() ? hdr.udp.srcPort : 0),
+            hdr.tcp.isValid() ? hdr.tcp.dstPort : (hdr.udp.isValid() ? hdr.udp.dstPort : 0)
+        }, (bit<32>) (1 << FLOW_ID_T_WIDTH));
 
         #ifdef VARIANT_NO_VQ
             meta.vq_id = 0; //No VQ -> use a dummy value
@@ -83,7 +77,13 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             }
 
             //Calculate the VQ ID
-            meta.vq_id = ((small_port_t) standard_metadata.egress_spec) ++ meta.flow_id;
+            #ifdef VARIANT_PER_FLOW_VQ
+                //Each (port, flow) pairs gets it own VQ
+                meta.vq_id = ((small_port_t) standard_metadata.egress_spec) ++ meta.flow_id;
+            #else
+                //Each port gets its own VQ - the flow ID is ignored
+                meta.vq_id = (vq_id_t) standard_metadata.egress_spec;
+            #endif
 
             //Determine how congested the VQ is
             meter_color_t color = METER_INVALID;
@@ -91,7 +91,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             log_msg("Meter color of VQ={}: {}", {meta.vq_id, color});
 
             //Apply ECN if VQ is congested
-            if (color == METER_GREEN) {
+            if (color == METER_GREEN) { //TODO color is always green
                 //Do nothing: just let the packet be forwarded
             } else if (color == METER_YELLOW) {
                 if (hdr.ipv4.ecn == 0) { log_msg("WARN: hosts don't support ECN"); }
@@ -108,8 +108,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
 control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
     apply {
-        log_msg("Egress data: timestamp={}; egress_port={}; flow_id={}; vq_id={}; dequeue_timedelta={}; packet_length={}",
-                {standard_metadata.egress_global_timestamp, standard_metadata.egress_port,
+        log_msg("Egress data: timestamp={}; ingress_port={}; egress_port={}; flow_id={}; vq_id={}; dequeue_timedelta={}; packet_length={}",
+                {standard_metadata.egress_global_timestamp, standard_metadata.ingress_port, standard_metadata.egress_port,
                 meta.flow_id, meta.vq_id, standard_metadata.deq_timedelta, standard_metadata.packet_length});
     }
 }

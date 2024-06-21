@@ -47,6 +47,7 @@ def plot_flow_type_vs_queue_delay_cdf(name_to_data: Dict[str, pd.DataFrame], plo
         ax: Axes = ax  # Type hint
         ax.set_xlabel("Queue Delay [ms]")
         ax.set_title(f"'{flow_type.name.capitalize()}' Flows")
+        # TODO limit x axis to 0-60 ms
 
         for name, data in name_to_data.items():
             # Axes.ecdf is not available for Python 3.8 (which Ubuntu 20.04 uses)

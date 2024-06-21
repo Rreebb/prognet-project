@@ -11,8 +11,10 @@ parser.add_argument("--variant", choices=['no-vq', 'per-port-vq', 'per-flow-vq']
                     help="Which P4 source code variant to use")
 parser.add_argument("--cli", action="store_true",
                     help="Start the Mininet CLI after setting up the network")
-parser.add_argument("--vq-committed-alpha", type=float, default=0.2, help="The virtual queues' committed rate to use as a fraction of the switch's maximum rate (only used for pfvq variant)")
-parser.add_argument("--vq-peak-alpha", type=float, default=0.3, help="The virtual queues' peak rate to use as a fraction of the switch's maximum rate (only used for pfvq variant)")
+parser.add_argument("--vq-committed-alpha", type=float, default=0.2,
+                    help="The virtual queues' committed rate to use as a fraction of the switch's maximum rate (only used for pfvq variant)")
+parser.add_argument("--vq-peak-alpha", type=float, default=0.3,
+                    help="The virtual queues' peak rate to use as a fraction of the switch's maximum rate (only used for pfvq variant)")
 args = parser.parse_args()
 
 switch_variant: Literal['no-vq', 'per-port-vq', 'per-flow-vq'] = args.variant
@@ -21,10 +23,10 @@ net = NetworkAPI()
 
 # Topology definition
 net.addP4Switch('s1')
-for i in [1, 2, 3]:
+for i in [1, 2, 3, 4]:
     net.addHost(f'h{i}')
     net.addLink('s1', f'h{i}')
-net.setDelayAll(2)
+net.setDelayAll(2)  # 2 ms link delay
 
 # Host configuration
 net.l3()
@@ -78,30 +80,33 @@ def get_host_ip(host: str) -> str:
     return ip_with_mask.split('/')[0]
 
 
-def add_task_iperf_server(host_from: str, host_to: str, time_from: float, time_to: float) -> None:
-    for port_offset, (rate, count) in enumerate(flows_rate_count):
-        iperf = f'iperf3 --server --port {port_min + port_offset}'
+def add_task_iperf_server(host_to: str, time_from: float, time_to: float) -> None:
+    for flow_index, (rate, count) in enumerate(flows_rate_count):
+        host_from = f'h{flow_index + 1}'
+        iperf = f'iperf3 --server --port {port_min + flow_index}'
         cmd = f'bash -c "{iperf} > ./work/log/iperf-s_{host_from}-{host_to}_{rate}x{count}.log 2>&1"'
         net.addTask(host_to, cmd, time_from, time_to - time_from)
 
 
-def add_task_iperf_client(host_from: str, host_to: str, time_from: float, time_to: float) -> None:
+def add_task_iperf_client(host_to: str, time_from: float, time_to: float) -> None:
     duration = time_to - time_from
     ip = get_host_ip(host_to)
-    for port_offset, (rate, count) in enumerate(flows_rate_count):
-        port = port_min + port_offset
-        iperf = (f'iperf3 --client {ip} --port {port} --bitrate {rate} --fq-rate {rate} --parallel {count}'
-                 f' --time {duration} --version4 --set-mss 1460')
+    for flow_index, (rate, count) in enumerate(flows_rate_count):
+        host_from = f'h{flow_index + 1}'
+        iperf = (f'iperf3 --client {ip} --port {port_min + flow_index} --bitrate {rate} --fq-rate {rate}'
+                 f' --parallel {count} --time {duration} --version4 --set-mss 1460')
         log = f'./work/log/iperf-c_{host_from}-{host_to}_{time_from}s-{time_to}s_{rate}x{count}.log'
         cmd = f'bash -c "{iperf} > {log} 2>&1"'
         net.addTask(host_from, cmd, time_from, duration)
 
 
 # Schedule traffic
-for h in ["h2", "h3"]:
-    add_task_iperf_server("h1", h, *task_from_to_sec['server'])
-    add_task_iperf_client("h1", h, *task_from_to_sec['warmup'])
-    add_task_iperf_client("h1", h, *task_from_to_sec['evaluation'])
+# h1 and h2 are responsible for smalling small and large flows, respectively.
+# Both h1 and h2 send to both h3 and h4: each iperf server receives both traffic types.
+for h in ["h3", "h4"]:
+    add_task_iperf_server(h, *task_from_to_sec['server'])
+    add_task_iperf_client(h, *task_from_to_sec['warmup'])
+    add_task_iperf_client(h, *task_from_to_sec['evaluation'])
 
 # Execute automatic traffic simulation
 net.disableCli()
@@ -111,3 +116,5 @@ time.sleep(task_from_to_sec['server'][1] + 3)  # Few seconds grace period
 net.stopNetwork()
 
 # TODO drop the first N seconds of traffic during evaluation
+
+# TODO check results with DCTCP disabled: does it really make a difference?

@@ -13,6 +13,7 @@ class SwitchLogParser:
     @staticmethod
     def parse_caching(path: Path) -> pd.DataFrame:
         # Cache the parsed file, but add a hash to the filename to be able to detect changes
+        # Detecting changes is not actually necessary anymore: we usually delete the caches when we gather new logs
         sha1 = hashlib.sha1(path.read_bytes()).digest()
         b64 = base64.b64encode(sha1).decode().replace('/', '-')
         parsed_path = path.with_suffix('.parsed.' + b64)
@@ -32,7 +33,7 @@ class SwitchLogParser:
 
     @staticmethod
     def parse(path: Path) -> pd.DataFrame:
-        columns = ['timestamp', 'egress_port', 'flow_id', 'vq_id', 'dequeue_timedelta', 'packet_length']
+        columns = ['timestamp', 'ingress_port', 'egress_port', 'flow_id', 'vq_id', 'dequeue_timedelta', 'packet_length']
         data = pd.DataFrame(np.empty((0, len(columns)), dtype=np.int64), columns=columns)
         with open(path, 'r') as f:
             for line in f:
@@ -46,6 +47,7 @@ class SwitchLogParser:
     @staticmethod
     def _parse_line(line: str) -> Optional[List[int]]:
         line = line.rstrip()
-        match = re.fullmatch(r'\[[^]]+] \[bmv2] \[I] \[[^]]+] Egress data: timestamp=(\d+); egress_port=(\d+); '
+        match = re.fullmatch(r'\[[^]]+] \[bmv2] \[I] \[[^]]+] Egress data:'
+                             r' timestamp=(\d+); ingress_port=(\d+); egress_port=(\d+); '
                              r'flow_id=(\d+); vq_id=(\d+); dequeue_timedelta=(\d+); packet_length=(\d+)', line)
         return list(map(int, match.groups())) if match else None
