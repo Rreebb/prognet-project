@@ -37,17 +37,17 @@ def plot_flow_type_vs_sum_packet_length_boxplot(name_to_data: Dict[str, pd.DataF
 
 
 def plot_flow_type_vs_queue_delay_cdf(name_to_data: Dict[str, pd.DataFrame], plot_dir: Path) -> None:
-    fig, axes = plt.subplots(1, len(FlowType), sharey='all')
+    fig, axes = plt.subplots(1, len(FlowType), sharey='all', sharex='all')
     fig.suptitle("Queue Delay CDF for Different Flow Types")
     axes[0].set_ylabel("Cumulative Distribution")
+    axes[0].set_xlabel("Queue Delay [ms]")
+    axes[0].set_xlim(-3, 63)  # TODO magic constant
 
     # TODO different line styles for different P4 source variants, different colors for different alpha values
 
     for ax, flow_type in zip(axes, FlowType):
         ax: Axes = ax  # Type hint
-        ax.set_xlabel("Queue Delay [ms]")
-        ax.set_title(f"'{flow_type.name.capitalize()}' Flows")
-        # TODO limit x axis to 0-60 ms
+        axes[0].set_title(f"'{flow_type.name.capitalize()}' Flows")
 
         for name, data in name_to_data.items():
             # Axes.ecdf is not available for Python 3.8 (which Ubuntu 20.04 uses)
@@ -68,4 +68,5 @@ def plot_flow_type_vs_queue_delay_cdf(name_to_data: Dict[str, pd.DataFrame], plo
             ax.plot(x, y, drawstyle='steps-post', label=name)
 
     fig.legend(loc='lower right')
+    fig.tight_layout()
     fig.savefig(f"{plot_dir}/queue_delay_cdf.pdf")
