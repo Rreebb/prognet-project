@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union, Iterable, Iterator, Any, Tuple, TypeVar
 
+import matplotlib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -45,13 +46,16 @@ def plot_flow_type_vs_queue_delay_cdf(name_to_data: Dict[str, pd.DataFrame], plo
     axes[0].set_xlabel("Queue Delay [ms]")
     axes[0].set_xlim(-3, MAX_QUEUE_DELAY_MS + 3)  # padding: +-3
 
-    # TODO different line styles for different P4 source variants, different colors for different alpha values
+    line_styles = MemorizingValueProvider.of_line_styles()
+    colors = MemorizingValueProvider.of_colors()
 
     for ax, flow_type in zip(axes, FlowType):
         ax: Axes = ax  # Type hint
-        axes[0].set_title(f"'{flow_type.name.capitalize()}' Flows")
+        ax.set_title(f"'{flow_type.name.capitalize()}' Flows")
 
         for name, data in name_to_data.items():
+            name_without_numbers = ''.join([i for i in name if not i.isdigit()])
+
             # Axes.ecdf is not available for Python 3.8 (which Ubuntu 20.04 uses)
             values = data[data.flow_type == flow_type.value]["dequeue_timedelta"]
             values /= 1_000  # Convert microseconds to milliseconds
@@ -67,8 +71,38 @@ def plot_flow_type_vs_queue_delay_cdf(name_to_data: Dict[str, pd.DataFrame], plo
             x = np.insert(x, 0, x[0])
             y = np.insert(y, 0, 0.0)
             # Steps-post ensures that the jumps occur at the right place
-            ax.plot(x, y, drawstyle='steps-post', label=name)
+            ax.plot(x, y, drawstyle='steps-post', label=name,
+                    linestyle=line_styles.get(name_without_numbers), color=colors.get(name))
 
-    fig.legend(loc='lower right')  # TODO move the legend and remove duplicate entries
+    axes[0].legend()
     fig.tight_layout()
     fig.savefig(f"{plot_dir}/queue_delay_cdf.pdf")
+
+
+T = TypeVar('T')
+
+
+class MemorizingValueProvider:
+    def __init__(self, values: Union[Iterable[T], Iterator[T]]):
+        self._map: Dict[Any, T] = dict()
+        self._values = values if isinstance(values, Iterator) else iter(values)
+
+    def get(self, key: Any) -> T:
+        if key not in self._map:
+            self._map[key] = next(self._values)
+        return self._map[key]
+
+    def items(self) -> Iterable[Tuple[Any, T]]:
+        return self._map.items()
+
+    @staticmethod
+    def of_colors(color_map: str = 'Set1') -> 'MemorizingValueProvider':
+        return MemorizingValueProvider((matplotlib.colors.to_hex(c) for c in matplotlib.colormaps[color_map].colors))
+
+    @staticmethod
+    def of_line_styles() -> 'MemorizingValueProvider':
+        return MemorizingValueProvider(['solid', 'dotted', 'dashed', 'dashdot'])
+
+    @staticmethod
+    def of_markers() -> 'MemorizingValueProvider':
+        return MemorizingValueProvider(['o', 'v', 's', 'D', 'P', 'X'])
