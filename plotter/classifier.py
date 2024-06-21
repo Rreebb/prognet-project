@@ -1,12 +1,7 @@
-from enum import Enum
-
 import numpy as np
 import pandas as pd
 
-
-class FlowType(Enum):
-    SMALL = 1
-    LARGE = 2
+from plotter.constants import FlowType
 
 
 def classify_flow_size(data: pd.DataFrame, flow_size_threshold: int) -> pd.DataFrame:

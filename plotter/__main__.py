@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Dict
 
 import pandas as pd
-from plotter.classifier import FlowType, classify_ingress_port
+from plotter.classifier import classify_ingress_port
+from plotter.constants import IPERF_CLIENT_HOST_COUNT, LOGS_DROP_LENGTH_SECONDS, FlowType
 from plotter.parser import SwitchLogParser
 from plotter.plotter import plot_flow_type_vs_queue_delay_cdf, plot_flow_type_vs_sum_packet_length_boxplot
 from matplotlib import pyplot as plt
@@ -18,8 +19,15 @@ def generate_plots(name_to_data: Dict[str, pd.DataFrame], plot_dir: Path) -> Non
 def load_data(switch_log_path: Path) -> pd.DataFrame:
     data: pd.DataFrame = SwitchLogParser.parse_caching(switch_log_path)
 
-    # Drop the backward packets (e.g. TCP ACKs)
-    data = data[data.egress_port >= 3]  # TODO fix magic constant
+    # Drop the backward packets (e.g. TCP ACKs): take only packets that are outbound to an iperf server
+    data = data[data.egress_port > IPERF_CLIENT_HOST_COUNT]
+
+    # Consider the timestamp of the first log entry as the epoch time
+    start_time = data.at[0, 'timestamp']
+    data['timestamp'] -= start_time
+
+    # Drop the first few seconds, the Mininet warmup phase
+    data = data[data.timestamp > LOGS_DROP_LENGTH_SECONDS * 1_000_000]
 
     # TODO maybe (log and) drop the iperf "meta" packets: I think we have +4 small and +4 large flows
     #  (one for each iperf connection)
@@ -27,6 +35,7 @@ def load_data(switch_log_path: Path) -> pd.DataFrame:
     #  Maybe filter based on packet count? and drop the 4 smallest flows?
 
     # Consider the timestamp of the first log entry as the epoch time
+    # Yes, do this again: we dropped the first few seconds, so the start time has changed
     start_time = data.at[0, 'timestamp']
     data['timestamp'] -= start_time
 

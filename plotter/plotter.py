@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-from plotter.classifier import FlowType
+from plotter.constants import FlowType, MAX_QUEUE_DELAY_MS
 
 
 def plot_flow_type_vs_sum_packet_length_boxplot(name_to_data: Dict[str, pd.DataFrame], plot_dir: Path) -> None:
@@ -41,7 +41,7 @@ def plot_flow_type_vs_queue_delay_cdf(name_to_data: Dict[str, pd.DataFrame], plo
     fig.suptitle("Queue Delay CDF for Different Flow Types")
     axes[0].set_ylabel("Cumulative Distribution")
     axes[0].set_xlabel("Queue Delay [ms]")
-    axes[0].set_xlim(-3, 63)  # TODO magic constant
+    axes[0].set_xlim(-3, MAX_QUEUE_DELAY_MS + 3)  # padding: +-3
 
     # TODO different line styles for different P4 source variants, different colors for different alpha values
 
