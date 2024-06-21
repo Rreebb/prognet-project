@@ -4,11 +4,12 @@ from pathlib import Path
 from typing import Dict
 
 import pandas as pd
+from matplotlib import pyplot as plt
+
 from plotter.classifier import classify_ingress_port
-from plotter.constants import IPERF_CLIENT_HOST_COUNT, LOGS_DROP_LENGTH_SECONDS, FlowType
+from plotter.constants import IPERF_CLIENT_HOST_COUNT, LOGS_DROP_LENGTH_SECONDS, FlowType, IPERF_CONNECTION_COUNT
 from plotter.parser import SwitchLogParser
 from plotter.plotter import plot_flow_type_vs_queue_delay_cdf, plot_flow_type_vs_sum_packet_length_boxplot
-from matplotlib import pyplot as plt
 
 
 def generate_plots(name_to_data: Dict[str, pd.DataFrame], plot_dir: Path) -> None:
@@ -27,15 +28,18 @@ def load_data(switch_log_path: Path) -> pd.DataFrame:
     data['timestamp'] -= start_time
 
     # Drop the first few seconds, the Mininet warmup phase
-    data = data[data.timestamp > LOGS_DROP_LENGTH_SECONDS * 1_000_000]
+    data = data[data.timestamp >= LOGS_DROP_LENGTH_SECONDS * 1_000_000]
 
-    # TODO maybe (log and) drop the iperf "meta" packets: I think we have +4 small and +4 large flows
-    #  (one for each iperf connection)
-    #  I don't think we can filter them based on port: sport is random, dport is the same for flows (probably)
-    #  Maybe filter based on packet count? and drop the 4 smallest flows?
+    # Drop the smallest flows: they are iperf meta flows, and they would be outliers in the graphs
+    flow_lengths = data[["flow_id", "packet_length"]].groupby("flow_id").sum()
+    flow_lengths = flow_lengths.rename(columns={"packet_length": "flow_length"})
+    flow_lengths.sort_values("flow_length", ascending=True, inplace=True)
+    to_drop_flows = flow_lengths.head(IPERF_CONNECTION_COUNT).index
+    data = data[~data.flow_id.isin(to_drop_flows)]
 
     # Consider the timestamp of the first log entry as the epoch time
     # Yes, do this again: we dropped the first few seconds, so the start time has changed
+    data.reset_index(inplace=True)  # Make the first row be at index 0
     start_time = data.at[0, 'timestamp']
     data['timestamp'] -= start_time
 
