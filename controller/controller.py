@@ -48,7 +48,10 @@ class Controller:
         alpha_c, alpha_p = self._config.virtual_queue_committed_alpha, self._config.virtual_queue_peak_alpha
         # TODO it might be a good idea to increase the peak burst size
         cir, cburst, pir, pburst = max_rate * alpha_c, max_depth * alpha_c, max_rate * alpha_p, max_depth * alpha_p
-        controller.meter_array_set_rates(meter_name, [(cir, cburst), (pir, pburst)])
+        sec_to_micro = 1 / 1_000_000  # Documentation incorrectly states that rates are in unit/second
+        rates = [(cir * sec_to_micro, int(cburst)), (pir * sec_to_micro, int(pburst))]  # burst sizes must be integers
+        self._logger.debug(f"VQ rates: [(cir, cburst), (pir, pburst)] = {rates}")
+        controller.meter_array_set_rates(meter_name, rates)
 
     def _fill_l3_tables(self, sw: str) -> None:
         """Fill in the next hop from the switch towards each host. This could be improved by longest prefix matching."""

@@ -1,7 +1,7 @@
 import os
 import time
 from argparse import ArgumentParser
-from typing import Literal, List, Tuple, Dict
+from typing import List, Tuple, Dict
 
 from p4utils.mininetlib.network_API import NetworkAPI
 from p4utils.utils.compiler import P4C
@@ -12,12 +12,10 @@ parser.add_argument("--variant", choices=['no-vq', 'per-port-vq', 'per-flow-vq']
 parser.add_argument("--cli", action="store_true",
                     help="Start the Mininet CLI after setting up the network")
 parser.add_argument("--vq-committed-alpha", type=float, default=0.2,
-                    help="The virtual queues' committed rate to use as a fraction of the switch's maximum rate (only used for pfvq variant)")
+                    help="The virtual queues' committed rate to use as a fraction of the switch's maximum rate")
 parser.add_argument("--vq-peak-alpha", type=float, default=0.3,
-                    help="The virtual queues' peak rate to use as a fraction of the switch's maximum rate (only used for pfvq variant)")
+                    help="The virtual queues' peak rate to use as a fraction of the switch's maximum rate")
 args = parser.parse_args()
-
-switch_variant: Literal['no-vq', 'per-port-vq', 'per-flow-vq'] = args.variant
 
 net = NetworkAPI()
 
@@ -32,10 +30,10 @@ net.setDelayAll(2)  # 2 ms link delay
 net.l3()
 
 # Switch configuration
-compiler_dir = f'./work/switch_{switch_variant}'
+compiler_dir = f'./work/switch_{args.variant}'
 os.makedirs(compiler_dir, exist_ok=True)
 net.setCompiler(P4C, outdir=compiler_dir, opts=f'--target bmv2 --arch v1model --std p4-16'
-                                               f' -D VARIANT_{switch_variant.upper().replace("-", "_")}=1')
+                                               f' -D VARIANT_{args.variant.upper().replace("-", "_")}=1')
 net.setP4SourceAll(f'./switch/switch.p4')
 
 # Initialize the switches via the controller
@@ -54,8 +52,8 @@ os.makedirs(os.path.dirname(controller_out_file), exist_ok=True)
 # Logging, capturing configuration
 net.setLogLevel('info')
 net.enableLogAll(log_dir='./work/log')
-# net.enablePcapDumpAll(pcap_dir='./work/pcap')
 net.disablePcapDumpAll()
+# net.enablePcapDumpAll(pcap_dir='./work/pcap')
 
 # Start Mininet interactively
 if args.cli:

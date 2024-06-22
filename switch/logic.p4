@@ -73,7 +73,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             //Validate that the egress port is within the supported range
             if ((portId_t) ((small_port_t) standard_metadata.egress_spec) != standard_metadata.egress_spec) {
                 log_msg("FAIL: Egress port is out of range: {}", {standard_metadata.egress_spec});
-                return; //Packet will still be enqueued
+                mark_to_drop(standard_metadata);
+                return;
             }
 
             //Calculate the VQ ID
