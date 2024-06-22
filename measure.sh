@@ -17,8 +17,11 @@ run(){
 }
 
 run "no-vq"       "--variant no-vq"
+
+run "ppvq-90-95"  "--variant per-port-vq --vq-committed-alpha 0.90 --vq-peak-alpha 0.95"
 run "ppvq-95-98"  "--variant per-port-vq --vq-committed-alpha 0.95 --vq-peak-alpha 0.98"
 run "ppvq-98-100" "--variant per-port-vq --vq-committed-alpha 0.98 --vq-peak-alpha 1.00"
-run "pfvq-10-20"  "--variant per-flow-vq --vq-committed-alpha 0.10 --vq-peak-alpha 0.20"
-run "pfvq-20-30"  "--variant per-flow-vq --vq-committed-alpha 0.20 --vq-peak-alpha 0.30"
-run "pfvq-30-40"  "--variant per-flow-vq --vq-committed-alpha 0.30 --vq-peak-alpha 0.40"
+
+run "pfvq-05-10"  "--variant per-flow-vq --vq-committed-alpha 0.05 --vq-peak-alpha 0.10"
+run "pfvq-07-08"  "--variant per-flow-vq --vq-committed-alpha 0.07 --vq-peak-alpha 0.08"
+run "pfvq-10-15"  "--variant per-flow-vq --vq-committed-alpha 0.10 --vq-peak-alpha 0.15"

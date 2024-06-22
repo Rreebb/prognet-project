@@ -46,7 +46,6 @@ class Controller:
 
         max_rate, max_depth = self._config.switch_queue_rate_pps, self._config.switch_queue_depth_packets
         alpha_c, alpha_p = self._config.virtual_queue_committed_alpha, self._config.virtual_queue_peak_alpha
-        # TODO it might be a good idea to increase the peak burst size
         cir, cburst, pir, pburst = max_rate * alpha_c, max_depth * alpha_c, max_rate * alpha_p, max_depth * alpha_p
         sec_to_micro = 1 / 1_000_000  # Documentation incorrectly states that rates are in unit/second
         rates = [(cir * sec_to_micro, int(cburst)), (pir * sec_to_micro, int(pburst))]  # burst sizes must be integers

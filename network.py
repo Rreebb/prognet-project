@@ -62,16 +62,18 @@ if args.cli:
     exit(0)
 
 # Traffic constants
-port_min = 5201
+port_min = 5201  # The first port to use for iperf3
+# Small and large flows to simulate (currently only 2 flow types are supported by the plotter)
 flows_rate_count: List[Tuple[str, int]] = [('400K', 10), ('2M', 3)]  # 0.4 Mbps * 10 + 2 Mbps * 3 = 10 Mbps (per port)
 task_from_to_sec: Dict[str, Tuple[int, int]] = {
-    'server': (1, 31),
-    'warmup': (2, 5),
-    'evaluation': (10, 30)
+    'server': (1, 31),  # When the iperf servers are active
+    'warmup': (2, 5),  # Warmup period (during which iperf clients are active), skipped when plots are generated
+    'evaluation': (10, 30)  # Iperf clients are activate, plots are generated from this data
 }
 
 
 def get_host_ip(host: str) -> str:
+    """Converts e.g. h4 to its IP address, e.g. 10.1.4.2"""
     sw_and_host = filter(lambda x: x[0] == host or x[1] == host, net.links()).__next__()
     sw = sw_and_host[0] if sw_and_host[1] == host else sw_and_host[1]
     ip_with_mask = net.getLink(host, sw)[0]['params2']['ip']
@@ -79,6 +81,7 @@ def get_host_ip(host: str) -> str:
 
 
 def add_task_iperf_server(host_to: str, time_from: float, time_to: float) -> None:
+    """Starts the iperf servers: one for each incoming iperf client."""
     for flow_index, (rate, count) in enumerate(flows_rate_count):
         host_from = f'h{flow_index + 1}'
         iperf = f'iperf3 --server --port {port_min + flow_index}'
@@ -87,6 +90,7 @@ def add_task_iperf_server(host_to: str, time_from: float, time_to: float) -> Non
 
 
 def add_task_iperf_client(host_to: str, time_from: float, time_to: float) -> None:
+    """Starts the iperf clients: one for each flow type."""
     duration = time_to - time_from
     ip = get_host_ip(host_to)
     for flow_index, (rate, count) in enumerate(flows_rate_count):
@@ -112,5 +116,3 @@ net.startNetwork()
 print("Waiting for the the simulation to finish...")
 time.sleep(task_from_to_sec['server'][1] + 3)  # Few seconds grace period
 net.stopNetwork()
-
-# TODO check results with DCTCP disabled: does it really make a difference?

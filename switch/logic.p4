@@ -92,7 +92,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             log_msg("Meter color of VQ={}: {}", {meta.vq_id, color});
 
             //Apply ECN if VQ is congested
-            if (color == METER_GREEN) { //TODO color is always green
+            if (color == METER_GREEN) {
                 //Do nothing: just let the packet be forwarded
             } else if (color == METER_YELLOW) {
                 if (hdr.ipv4.ecn == 0) { log_msg("WARN: hosts don't support ECN"); }
@@ -109,6 +109,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
 control MyEgress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
     apply {
+        //Log data that we can later use to create plots
         log_msg("Egress data: timestamp={}; ingress_port={}; egress_port={}; flow_id={}; vq_id={}; dequeue_timedelta={}; packet_length={}",
                 {standard_metadata.egress_global_timestamp, standard_metadata.ingress_port, standard_metadata.egress_port,
                 meta.flow_id, meta.vq_id, standard_metadata.deq_timedelta, standard_metadata.packet_length});

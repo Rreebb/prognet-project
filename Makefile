@@ -11,6 +11,4 @@ measure:
 plot:
 	python -m plotter --measure-dir work/measure --plot-dir work/plot --open-plots
 
-eval: measure plot
-
 .PHONY: clean cli measure plot
