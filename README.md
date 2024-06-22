@@ -59,7 +59,7 @@ ECN marking happens when the committed rate is exceeded and packets are dropped 
 
 ### Queue Delay CDF for Different Flow Types
 
-![Queue Delay CDF for Different Flow Types](results/1/queue_delay_cdf.pdf)
+![Queue Delay CDF for Different Flow Types](results/1/queue_delay_cdf.png)
 
 Performed poorly:
 
@@ -74,7 +74,7 @@ The other alpha values all performed well: most packets experienced low delays.
 
 Please keep in mind that each flow was active for 20 seconds, so the flow lengths are proportional to the throughput.
 
-![Sum of Flow Packet Lengths for Different Flow Types](results/1/sum_packet_length_boxplot.pdf)
+![Sum of Flow Packet Lengths for Different Flow Types](results/1/sum_packet_length_boxplot.png)
 
 The large flows perform poorly with per-flow virtual queues, as they are limited to alpha% of the total bandwidth,
 while they wish to use a lot more.
